@@ -37,14 +37,15 @@ router.get('/', async function (req, res) {
     roast.length > 0 ? roast.map((v) => `p_roast = '${v}'`).join(` OR `) : ''
 
   //價格
-  const price_gte = Number(req.query.price_gte) || 0
-  const price_lte = Number(req.query.price_gte) || 4000
-  conditions[5] = `p_price BETWEEN ${price_gte} AND ${price_lte}`
+  const price_gte = Number(req.query.price_gte) || 0 // 最小價格
+  const price_lte = Number(req.query.price_lte) || 4000 // 最大價格
+  conditions[5] = `p_discount BETWEEN ${price_gte} AND ${price_lte}`
 
   const cvs = conditions.filter((v) => v)
   const where =
     cvs.length > 0 ? 'WHERE' + cvs.map((v) => `(${v})`).join(`AND`) : ''
 
+  //分類跟排序
   const sort = req.query.sort || 'p_id'
   const order = req.query.order || 'asc'
 
