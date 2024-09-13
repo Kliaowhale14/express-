@@ -31,10 +31,15 @@ router.get('/', async function (req, res) {
       ? process.map((v) => `p_process = '${v}'`).join(` OR `)
       : ''
 
-  //烘焙法
+  //烘焙法分類
   const roast = req.query.roast ? req.query.roast.split(',') : []
   conditions[4] =
     roast.length > 0 ? roast.map((v) => `p_roast = '${v}'`).join(` OR `) : ''
+
+  //大分類
+  const type = req.query.type ? req.query.type.split(',') : []
+  conditions[6] =
+    type.length > 0 ? type.map((v) => `p_type = '${v}'`).join(` OR `) : ''
 
   //價格
   const price_gte = Number(req.query.price_gte) || 0 // 最小價格
