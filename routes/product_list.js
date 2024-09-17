@@ -36,6 +36,10 @@ router.get('/', async function (req, res) {
   conditions[4] =
     roast.length > 0 ? roast.map((v) => `p_roast = '${v}'`).join(` OR `) : ''
 
+  //大分類
+  const type = req.query.type ? req.query.type : []
+  conditions[6] = type.length > 0 ? type.map((v) => `p_type = '${v}'`) : ''
+
   //價格
   const price_gte = Number(req.query.price_gte) || 0 // 最小價格
   const price_lte = Number(req.query.price_lte) || 4000 // 最大價格
@@ -87,11 +91,11 @@ router.get('/:id', async function (req, res) {
   const id = Number(req.params.id)
 
   try {
-    const [rows] = await db.query('SELECT * FROM product_list WHERE p_id = ?', [
+    const [rows] = await db.query(`SELECT * FROM product_list WHERE p_id = ?`, [
       id,
     ])
     const product = rows[0]
-
+    console.log(product)
     return res.json({ status: 'success', data: { product } })
   } catch (e) {
     return res.json({
@@ -101,4 +105,42 @@ router.get('/:id', async function (req, res) {
   }
 })
 
+// GET - 得到單筆資料(注意，有動態參數時要寫在GET區段最後面)
+router.get('/type/:type', async function (req, res) {
+  const type = String(req.params.type)
+
+  try {
+    const [rows] = await db.query(
+      `SELECT * FROM product_list WHERE p_type = ?`,
+      [type]
+    )
+    const product = rows
+    console.log(product)
+    return res.json({ status: 'success', data: { product } })
+  } catch (e) {
+    return res.json({
+      status: 'error',
+      message: '找不到資料',
+    })
+  }
+})
+// GET - 得到單筆資料(注意，有動態參數時要寫在GET區段最後面)
+router.get('/sale/:sale', async function (req, res) {
+  const sale = req.params.sale
+
+  try {
+    const [rows] = await db.query(
+      `SELECT * FROM product_list WHERE p_sale IS NOT NULL`,
+      [sale]
+    )
+    const product = rows
+    console.log(product)
+    return res.json({ status: 'success', data: { product } })
+  } catch (e) {
+    return res.json({
+      status: 'error',
+      message: '找不到資料',
+    })
+  }
+})
 export default router
