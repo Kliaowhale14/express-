@@ -31,7 +31,7 @@ router.get('/', async function (req, res) {
       ? process.map((v) => `p_process = '${v}'`).join(` OR `)
       : ''
 
-  //烘焙法
+  //烘焙法分類
   const roast = req.query.roast ? req.query.roast.split(',') : []
   conditions[4] =
     roast.length > 0 ? roast.map((v) => `p_roast = '${v}'`).join(` OR `) : ''
