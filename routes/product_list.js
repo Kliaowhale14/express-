@@ -36,9 +36,9 @@ router.get('/', async function (req, res) {
   conditions[4] =
     roast.length > 0 ? roast.map((v) => `p_roast = '${v}'`).join(` OR `) : ''
 
-  //大分類
-  const type = req.query.type ? req.query.type : []
-  conditions[6] = type.length > 0 ? type.map((v) => `p_type = '${v}'`) : ''
+  // //大分類
+  // const type = req.query.type ? req.query.type : []
+  // conditions[6] = type.length > 0 ? type.map((v) => `p_type = '${v}'`) : ''
 
   //價格
   const price_gte = Number(req.query.price_gte) || 0 // 最小價格
@@ -54,6 +54,7 @@ router.get('/', async function (req, res) {
   const order = req.query.order || 'asc'
 
   const orderBy = `ORDER BY ${sort} ${order}`
+
   //分頁
   const page = Number(req.query.page) || 1
   const perpage = Number(req.query.perpage) || 16
@@ -68,7 +69,9 @@ router.get('/', async function (req, res) {
   // 處理如果沒找到資料
 
   // 進行分頁時，額外執行sql在此條件下總共多少筆資料
-  const [rows2] = await db.query(`SELECT COUNT(*) AS count FROM product_list`)
+  const [rows2] = await db.query(
+    `SELECT COUNT(*) AS count FROM product_list ${where}`
+  )
   const { count } = rows2[0]
   // 計算總頁數
   const pageCount = Math.ceil(count / perpage)
@@ -163,12 +166,12 @@ router.get('/type/:type', async function (req, res) {
     [type]
   )
 
-  const product = rows
+  const products = rows
   // 處理如果沒找到資料
 
   // 進行分頁時，額外執行sql在此條件下總共多少筆資料
   const [rows2] = await db.query(
-    `SELECT COUNT(*) AS count FROM product_list WHERE p_type=?`,
+    `SELECT COUNT(*) AS count FROM product_list ${where} && p_type=?`,
     [type]
   )
   const { count } = rows2[0]
@@ -182,7 +185,7 @@ router.get('/type/:type', async function (req, res) {
       pageCount,
       page,
       perpage,
-      product,
+      products,
     },
   })
 })
