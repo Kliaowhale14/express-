@@ -58,3 +58,5 @@ WHERE (name LIKE '%e%')
     AND price <= 10000
 ORDER BY price ASC;
 -- LIMIT 10 OFFSET 0;
+
+SELECT * FROM product_list WHERE p_sale is not null

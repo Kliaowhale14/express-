@@ -2,8 +2,7 @@ import express from 'express'
 const router = express.Router()
 
 // 資料庫直接使用mysql和sql來查詢
-import db from '#configs/mysql.js'
-
+import db from '##/configs/mysql.js'
 // GET - 得到所有資料
 //變數.方法('路徑',(req,res){函式內容}
 router.get('/', async function (req, res) {
