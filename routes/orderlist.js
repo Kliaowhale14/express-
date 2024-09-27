@@ -95,9 +95,9 @@ router.get('/:id', async function (req, res) {
       'SELECT * FROM orderlist WHERE orderlist_id = ?',
       [id]
     )
-    const orderli = rows[0]
+    const orderlist = rows[0]
 
-    return res.json({ status: 'success', data: { orderli } })
+    return res.json({ status: 'success', data: { orderlist } })
   } catch (e) {
     return res.json({
       status: 'error',
