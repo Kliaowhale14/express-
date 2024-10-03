@@ -105,85 +105,89 @@ router.post('/', async (req, res) => {
   const {
     order_date = new Date().toISOString().split('T')[0],  // 格式化為日期型別
     member_id = null,
-    pay_ornot = '0',
-    pay_id = null,
     send_id = null,
     send_tax = 0,
     total_price = 0,
-    order_status = 'pending',
-    recipient_address = '',
-    order_detail = {},  // 來自前端的 order_detail 資料
+    order_status = '包貨中',
+    order_detail_id = 0,
+    order_detail = {
+      create_date: new Date().toISOString().split('T')[0],
+      pay_way: payway,
+      send_way: selectedSendway,
+      send_tax: selectedSendCost,
+      price: totalPrice,
+      recipient_address: address,
+    },  // 來自前端的 order_detail 資料
   } = req.body;
 
   const {
-    create_date = new Date().toISOString().split('T')[0],  // 預設值
+    create_date = order_date,
     send_date = null,
-    pay_way = '',
-    price = 0,
-    send_way = '',
+    pay_id = null,
+    pay_way,
+    send_way,
+    price,
+    recipient_address,
   } = order_detail;
 
+  let connection;
   try {
-    // 開始 SQL 交易
-    await db.getConnection().then(async (connection) => {
-      await connection.beginTransaction();
+    connection = await db.getConnection();
+    await connection.beginTransaction();
 
-      try {
-        // 插入到 orderlist 表
-        const insertOrderlistQuery = `
-         INSERT INTO orderlist 
-          (order_date, member_id, send_id, send_tax, total_price, order_status) 
-          VALUES (?, ?, ?, ?, ?, ?)
-        `;
-        const orderlistValues = [
-          order_date, member_id, send_id, send_tax, total_price, order_status,
-        ];
+    try {
+      // 1. 插入到 order_detail 表
+      const insertOrderDetailQuery = `
+        INSERT INTO order_detail
+        (create_date, send_date, pay_id, pay_way, send_id, send_way, send_tax, price, recipient_address)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      const orderDetailValues = [
+        create_date,
+        send_date,
+        pay_id,
+        pay_way,
+        send_id,
+        send_way,
+        send_tax,
+        price,
+        recipient_address,
+      ];
 
-        const [orderlistResult] = await connection.execute(insertOrderlistQuery, orderlistValues);
-        const orderlist_id = orderlistResult.insertId;  // 取得剛插入的 orderlist_id
+      const [orderDetailResult] = await connection.execute(insertOrderDetailQuery, orderDetailValues);
+      const order_detail_id = orderDetailResult.insertId;  // 獲取剛插入的 order_detail_id
 
-        // 插入到 order_detail 表
-        const insertOrderDetailQuery = `
-          INSERT INTO order_detail
-          (create_date, send_date, pay_id, send_id, send_way, send_tax, price, recipient_address, order_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `;
-        const orderDetailValues = [
-          new Date().toISOString().split('T')[0], // 假設創建日期
-          null, // 假設發送日期
-          null, // pay_id 可為 null
-          send_id, // 將 send_id 傳遞給 order_detail
-          null, // send_way 可以根據需要填寫
-          send_tax, // 將運費傳遞給 order_detail
-          total_price, // 總價格
-          '', // 可以根據需求填寫收件人地址
-          orderlist_id, // 這是剛插入的 orderlist_id
-        ];
+      // 2. 插入到 orderlist 表
+      const insertOrderlistQuery = `
+        INSERT INTO orderlist 
+        (order_date, member_id, send_id, send_tax, total_price, order_status, order_detail_id) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `;
+      const orderlistValues = [
+        order_date, member_id, send_id, send_tax, total_price, order_status, order_detail_id,
+      ];
 
-        await connection.execute(insertOrderDetailQuery, orderDetailValues);
+      const [orderlistResult] = await connection.execute(insertOrderlistQuery, orderlistValues);
 
-        // 提交交易
-        await connection.commit();
-        connection.release();
-
-        // 回應前端成功訊息
-        res.status(201).json({
-          message: '訂單與訂單詳細已成功新增到資料庫！',
-          orderlistId: orderlist_id,
-        });
-      } catch (err) {
-        // 如果有錯誤，回滾交易
-        await connection.rollback();
-        connection.release();
-        throw err;
-      }
-    });
+      // 提交交易
+      await connection.commit();
+      res.status(201).json({
+        message: '訂單與訂單詳細已成功新增到資料庫！',
+        orderlistId: orderlistResult.insertId, // 可以返回剛插入的 orderlist_id
+        orderdetailId: order_detail_id, // 返回 order_detail_id
+      });
+    } catch (err) {
+      await connection.rollback();
+      throw err;
+    }
   } catch (error) {
     console.error('新增訂單時發生錯誤:', error);
     res.status(500).json({
       message: '無法新增訂單，請稍後再試。',
       error: error.message,
     });
+  } finally {
+    if (connection) connection.release();
   }
 });
 
