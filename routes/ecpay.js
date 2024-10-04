@@ -6,7 +6,7 @@ import * as crypto from 'crypto'
 import 'dotenv/config.js'
 // 資料庫使用
 import sequelize from '#configs/db.js'
-const { Purchase_Order } = sequelize.models
+const { Order_list } = sequelize.models
 
 // 中介軟體，存取隱私會員資料用
 import authenticate from '#middlewares/authenticate.js'
@@ -20,21 +20,22 @@ import authenticate from '#middlewares/authenticate.js'
 // const HashKey = 'pwFHCqoQZGmho4w6' //3002607
 // const HashIV = 'EkRm7iFT261dpevs' //3002607
 // let isStage = true // 測試環境： true；正式環境：false
-const MerchantID = process.env.ECPAY_MERCHANT_ID //必填
-const HashKey = process.env.ECPAY_HASH_KEY //3002607
-const HashIV = process.env.ECPAY_HASH_IV //3002607
-let isStage = process.env.ECPAY_TEST // 測試環境： true；正式環境：false
+const MerchantID = '3002607' //必填
+const HashKey = 'pwFHCqoQZGmho4w6' //3002607
+const HashIV = 'EkRm7iFT261dpevs' //3002607
+let isStage = true // 測試環境： true；正式環境：false
 const ReturnURL = process.env.ECPAY_RETURN_URL
 const OrderResultURL = process.env.ECPAY_ORDER_RESULT_URL
 const ReactClientBackURL = process.env.ECPAY_ORDER_CALLBACK_URL
 
 // 前端發送訂單id給後端，後端再發送要送到綠界的表單
 // http://localhost:3005/ecpay?orderId=123123
-router.get('/payment', authenticate, async (req, res, next) => {
+router.get('/', authenticate, async (req, res, next) => {
+  const amount = req.query.amount
   // 從資料庫得到order資料
   const orderId = req.query.orderId
   // 從資料庫取得訂單資料
-  const orderRecord = await Purchase_Order.findByPk(orderId, {
+  const orderRecord = await Order_list.findByPk(orderId, {
     raw: true, // 只需要資料表中資料
   })
 
@@ -154,8 +155,8 @@ ${inputs}
 </body>
 </html>
 `
-  //res.json({ htmlContent })
-  res.send(htmlContent)
+  res.json({ htmlContent })
+  // res.send(htmlContent)
 
   // const htmlContent = `
   // <!DOCTYPE html>
