@@ -1,8 +1,11 @@
 import express from 'express'
+import upload from './../utils/upload-imgs.js'
+
 const router = express.Router()
 
 // 資料庫直接使用mysql和sql來查詢
 import db from '##/configs/mysql.js'
+import uploadImgs from '##/utils/upload-imgs.js'
 
 // GET - 得到所有資料
 router.get('/', async function (req, res) {
@@ -86,6 +89,28 @@ router.get('/', async function (req, res) {
       products,
     },
   })
+})
+// 處理新增的資料項目
+
+router.post('/api', upload.single('p_pic1'), async (req, res) => {
+  const output = {
+    success: false,
+    result: null,
+    bodyData: req.body, // 除錯用
+  }
+  const data = { ...req.body } // 表單資料
+
+  data.p_date = new Date()
+  const sql2 = 'INSERT INTO `product_list` SET ?'
+  // INSERT, UPDATE 最好用 try/catch 做錯誤處理
+  try {
+    const [result] = await db.query(sql2, [data])
+    output.success = !!result.affectedRows
+    output.result = result
+  } catch (ex) {
+    output.error = ex
+  }
+  res.json(output)
 })
 
 // GET - 得到單筆資料(注意，有動態參數時要寫在GET區段最後面)
