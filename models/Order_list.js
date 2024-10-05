@@ -1,4 +1,4 @@
-import { DataTypes } from 'sequelize';
+import { DataTypes } from 'sequelize'
 
 export default async function (sequelize) {
   return sequelize.define(
@@ -52,5 +52,5 @@ export default async function (sequelize) {
       paranoid: false, // 不使用軟刪除
       underscored: true, // 使用 snake_case 命名規則
     }
-  );
+  )
 }

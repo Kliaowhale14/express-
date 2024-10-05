@@ -9,33 +9,32 @@ import sequelize from '#configs/db.js'
 const { Order_list } = sequelize.models
 
 // 中介軟體，存取隱私會員資料用
-import authenticate from '#middlewares/authenticate.js'
+// import authenticate from '#middlewares/authenticate.js'
 
 //綠界全方位金流技術文件：
 // https://developers.ecpay.com.tw/?p=2856
 // 信用卡測試卡號：4311-9522-2222-2222 安全碼 222
 
 //一、選擇帳號，是否為測試環境
-// const MerchantID = '3002607' //必填
-// const HashKey = 'pwFHCqoQZGmho4w6' //3002607
-// const HashIV = 'EkRm7iFT261dpevs' //3002607
-// let isStage = true // 測試環境： true；正式環境：false
 const MerchantID = '3002607' //必填
 const HashKey = 'pwFHCqoQZGmho4w6' //3002607
 const HashIV = 'EkRm7iFT261dpevs' //3002607
 let isStage = true // 測試環境： true；正式環境：false
-const ReturnURL = process.env.ECPAY_RETURN_URL
+// const MerchantID = '3002607' //必填
+// const HashKey = 'pwFHCqoQZGmho4w6' //3002607
+// const HashIV = 'EkRm7iFT261dpevs' //3002607
+// let isStage = false // 測試環境： true；正式環境：false
+const ReturnURL = 'https://www.ecpay.com.tw'
 const OrderResultURL = process.env.ECPAY_ORDER_RESULT_URL
 const ReactClientBackURL = process.env.ECPAY_ORDER_CALLBACK_URL
 
 // 前端發送訂單id給後端，後端再發送要送到綠界的表單
 // http://localhost:3005/ecpay?orderId=123123
-router.get('/', authenticate, async (req, res, next) => {
-  const amount = req.query.amount
+router.get('/orderfetch', async (req, res, next) => {
   // 從資料庫得到order資料
-  const orderId = req.query.orderId
+  const orderlist_id = req.query.orderlist_id
   // 從資料庫取得訂單資料
-  const orderRecord = await Order_list.findByPk(orderId, {
+  const orderRecord = await Order_list.findByPk(orderlist_id, {
     raw: true, // 只需要資料表中資料
   })
 
@@ -43,9 +42,9 @@ router.get('/', authenticate, async (req, res, next) => {
   console.log(orderRecord)
 
   //二、輸入參數
-  const TotalAmount = orderRecord.amount
+  const TotalAmount = orderRecord.totalprice
   const TradeDesc = '商店線上付款'
-  const ItemName = '訂單編號' + orderRecord.id + '商品一批'
+  const ItemName = '訂單編號' + orderRecord.orderlist_id + '商品一批'
 
   const ChoosePayment = 'ALL'
 
