@@ -5,6 +5,9 @@ import * as crypto from 'crypto'
 /* GET home page. */
 router.get('/', function (req, res, next) {
   const amount = req.query.amount
+  const orderlist_id = req.query.orderlist_id // 從 query 取得 order_id，對應到 orderlist_id
+  const item_qty = req.query.item_qty
+  const order_item = req.query.order_item
 
   //綠界全方位金流技術文件：
   // https://developers.ecpay.com.tw/?p=2856
@@ -19,10 +22,10 @@ router.get('/', function (req, res, next) {
 
   //二、輸入參數
   const TotalAmount = amount
-  const TradeDesc = '商店線上付款'
-  const ItemName = '訂單編號' + '商品一批'
+  const TradeDesc = 'AND咖啡線上付款'
+  const ItemName = `AND咖啡訂單編號${orderlist_id}，商品總數量：${item_qty}，商品內容：${order_item}`
   const ReturnURL = 'https://www.ecpay.com.tw'
-  const OrderResultURL = 'http://localhost:3000/payment/callback' //前端成功頁面
+  const OrderResultURL = 'http://localhost:3000/addcart/finishorder' //前端成功頁面
   const ChoosePayment = 'ALL'
 
   ////////////////////////以下參數不用改////////////////////////
@@ -134,13 +137,15 @@ router.get('/', function (req, res, next) {
       <title>全方位金流-測試</title>
   </head>
   <body>
-      <form method="post" action="${APIURL}">
-  ${inputs}
-  <input type ="submit" value = "送出參數">
+      <form id="autoForm" method="post" action="${APIURL}">
+        ${inputs}
       </form>
+      <script type="text/javascript">
+        document.getElementById('autoForm').submit(); // 自動提交表單
+      </script>
   </body>
   </html>
-  `
+`
 
   res.send(htmlContent)
 

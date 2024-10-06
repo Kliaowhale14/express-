@@ -11,9 +11,10 @@ router.post('/', async (req, res) => {
     total_price = 0,
     order_status = '包貨中',
     order_detail = {
+      order_item,
+      item_qty,
       pay_way,
       send_way,
-      send_tax,
       price,
       recipient_address,
     }, // 來自前端的 order_detail 資料
@@ -21,8 +22,8 @@ router.post('/', async (req, res) => {
 
   const {
     create_date = order_date,
-    send_date = null,
-    pay_id = null,
+    order_item,
+    item_qty,
     pay_way,
     send_way,
     price,
@@ -35,35 +36,11 @@ router.post('/', async (req, res) => {
     await connection.beginTransaction()
 
     try {
-      // 1. 插入到 order_detail 表
-      const insertOrderDetailQuery = `
-        INSERT INTO order_detail
-        (create_date, send_date, pay_id, pay_way, send_id, send_way, send_tax, price, recipient_address)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `
-      const orderDetailValues = [
-        create_date,
-        send_date,
-        pay_id,
-        pay_way,
-        send_id,
-        send_way,
-        send_tax,
-        price,
-        recipient_address,
-      ]
-
-      const [orderDetailResult] = await connection.execute(
-        insertOrderDetailQuery,
-        orderDetailValues
-      )
-      const order_detail_id = orderDetailResult.insertId // 獲取剛插入的 order_detail_id
-
-      // 2. 插入到 orderlist 表
+      // 1. 插入到 orderlist 表
       const insertOrderlistQuery = `
         INSERT INTO orderlist 
-        (order_date, member_id, send_id, send_tax, total_price, order_status, order_detail_id) 
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (order_date, member_id, send_id, send_tax, total_price, order_status) 
+        VALUES (?, ?, ?, ?, ?, ?)
       `
       const orderlistValues = [
         order_date,
@@ -72,7 +49,6 @@ router.post('/', async (req, res) => {
         send_tax,
         total_price,
         order_status,
-        order_detail_id,
       ]
 
       const [orderlistResult] = await connection.execute(
@@ -80,12 +56,49 @@ router.post('/', async (req, res) => {
         orderlistValues
       )
 
-      const orderlist_id = orderlistResult.insertId // 獲取剛插入的 order_detail_id
+      const orderlist_id = orderlistResult.insertId // 獲取剛插入的 orderlist_id
+
+      // 2. 插入到 order_detail 表，將 order_id 設置為剛插入的 orderlist_id
+      const insertOrderDetailQuery = `
+        INSERT INTO order_detail
+        (create_date, order_item, item_qty, pay_way, send_id, send_way, send_tax, price, recipient_address, orderlist_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `
+      const orderDetailValues = [
+        create_date,
+        order_item,
+        item_qty,
+        pay_way,
+        send_id,
+        send_way,
+        send_tax,
+        price,
+        recipient_address,
+        orderlist_id, // 設置 order_id
+      ]
+
+      const [orderDetailResult] = await connection.execute(
+        insertOrderDetailQuery,
+        orderDetailValues
+      )
+
+      const order_detail_id = orderDetailResult.insertId // 獲取剛插入的 order_detail_id
+
+      // 更新 orderlist 表，添加 order_detail_id
+      const updateOrderlistQuery = `
+        UPDATE orderlist 
+        SET order_detail_id = ? 
+        WHERE orderlist_id = ?
+      `
+      await connection.execute(updateOrderlistQuery, [
+        order_detail_id,
+        orderlist_id,
+      ])
 
       await connection.commit()
       res.status(201).json({
         message: '訂單與訂單詳細已成功新增到資料庫！',
-        orderlistId: orderlistResult.insertId, // 可以返回剛插入的 orderlist_id
+        orderlistId: orderlist_id, // 可以返回剛插入的 orderlist_id
         orderdetailId: order_detail_id, // 返回 order_detail_id
       })
     } catch (err) {
