@@ -18,11 +18,14 @@ const fileFilter = (req, file, callback) => {
 // storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    //console.log('destination file', file)
     cb(null, 'public/img')
   },
   filename: (req, file, cb) => {
+    //console.log('filename file', file)
     const f = v4() // 主檔名
     const ext = extMap[file.mimetype] // 副檔名
+    
     cb(null, f + ext)
   },
 })

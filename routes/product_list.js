@@ -5,7 +5,7 @@ const router = express.Router()
 
 // 資料庫直接使用mysql和sql來查詢
 import db from '##/configs/mysql.js'
-import uploadImgs from '##/utils/upload-imgs.js'
+//import uploadImgs from '##/utils/upload-imgs.js'
 
 // GET - 得到所有資料
 router.get('/', async function (req, res) {
@@ -92,23 +92,75 @@ router.get('/', async function (req, res) {
 })
 // 處理新增的資料項目
 
-router.post('/api', upload.single('p_pic1'), async (req, res) => {
+router.post(
+  '/api',
+  upload.fields([
+    { name: 'p_pic1', maxCount: 1 },
+    { name: 'p_pic2', maxCount: 1 },
+    { name: 'p_pic3', maxCount: 1 },
+    { name: 'p_pic4', maxCount: 1 },
+    { name: 'p_pic5', maxCount: 1 },
+  ]),
+  async (req, res) => {
+    const output = {
+      success: false,
+      result: null,
+      bodyData: req.body, // 除錯用
+    }
+    const data = { ...req.body } // 表單資料
+
+    data.p_date = new Date()
+    //console.log('upload', upload)
+    //console.log('getFilename', upload.storage.filerename)
+    if (req.files.p_pic1) {
+      data.p_pic1 = req.files.p_pic1[0].filename
+    }
+    if (req.files.p_pic2) {
+      data.p_pic2 = req.files.p_pic2[0].filename
+    }
+    if (req.files.p_pic3) {
+      data.p_pic3 = req.files.p_pic3[0].filename
+    }
+    if (req.files.p_pic4) {
+      data.p_pic4 = req.files.p_pic4[0].filename
+    }
+    if (req.files.p_pic5) {
+      data.p_pic5 = req.files.p_pic5[0].filename
+    }
+
+    console.log('storage', upload.storage.filerename)
+    console.log('多檔', req.files)
+
+    const sql2 = 'INSERT INTO `product_list` SET ?'
+    // INSERT, UPDATE 最好用 try/catch 做錯誤處理
+    try {
+      const [result] = await db.query(sql2, [data])
+      output.success = !!result.affectedRows
+      output.result = result
+    } catch (ex) {
+      output.error = ex
+    }
+    res.json(output)
+  }
+)
+router.delete('/api/:p_id', async (req, res) => {
   const output = {
     success: false,
-    result: null,
-    bodyData: req.body, // 除錯用
+    p_id: req.params.p_id,
+    error: '',
   }
-  const data = { ...req.body } // 表單資料
-
-  data.p_date = new Date()
-  const sql2 = 'INSERT INTO `product_list` SET ?'
-  // INSERT, UPDATE 最好用 try/catch 做錯誤處理
-  try {
-    const [result] = await db.query(sql2, [data])
-    output.success = !!result.affectedRows
-    output.result = result
-  } catch (ex) {
-    output.error = ex
+  const p_id = parseInt(req.params.p_id) || 0
+  if (p_id) {
+    // 除了 "讀取" 之外, 都應該要做錯誤處理
+    try {
+      const sql = `DELETE FROM product_list WHERE p_id=${p_id}`
+      const [result] = await db.query(sql)
+      output.success = !!result.affectedRows
+    } catch (ex) {
+      output.error = '可能因為外鍵限制, 無法刪除資料'
+    }
+  } else {
+    output.error = '不合法的編號'
   }
   res.json(output)
 })
