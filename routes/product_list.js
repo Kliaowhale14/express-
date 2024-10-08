@@ -1,5 +1,7 @@
 import express from 'express'
 import upload from './../utils/upload-imgs.js'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
 
 const router = express.Router()
 
@@ -143,6 +145,7 @@ router.post(
     res.json(output)
   }
 )
+//刪除項目
 router.delete('/api/:p_id', async (req, res) => {
   const output = {
     success: false,
@@ -164,7 +167,91 @@ router.delete('/api/:p_id', async (req, res) => {
   }
   res.json(output)
 })
+//編輯當筆資料
+router.get('/api/:p_id', async (req, res) => {
+  const output = {
+    success: false,
+    data: {},
+    error: '',
+  }
 
+  const p_id = parseInt(req.params.p_id) || 0
+  if (!p_id) {
+    output.error = 'PK 不正確'
+    return res.json(output)
+  }
+  const sql = `SELECT * FROM product_list WHERE p_id=${p_id}`
+  const [rows] = await db.query(sql)
+  if (!rows.length) {
+    // 沒有該筆資料
+    return res.redirect('/product/backend')
+  }
+  const row = rows[0]
+  output.data = row
+  output.success = true // 表示有正常拿到資料
+  console.log('output', output)
+  return res.json(output)
+})
+
+//更新資料
+router.put(
+  '/api/:p_id',
+  upload.fields([
+    { name: 'p_pic1', maxCount: 1 },
+    { name: 'p_pic2', maxCount: 1 },
+    { name: 'p_pic3', maxCount: 1 },
+    { name: 'p_pic4', maxCount: 1 },
+    { name: 'p_pic5', maxCount: 1 },
+  ]),
+  async (req, res) => {
+    const output = {
+      success: false,
+      p_id: req.params.p_id,
+      result: null,
+      bodyData: req.body, // 除錯用
+    }
+    const p_id = parseInt(req.params.p_id) || 0
+    if (!p_id) {
+      output.error = '無此編號'
+      return res.json(output)
+    }
+    const data = { ...req.body } // 表單資料
+    console.log('資料', data)
+
+    data.p_date = new Date()
+    //console.log('upload', upload)
+    //console.log('getFilename', upload.storage.filerename)
+    if (req.files.p_pic1) {
+      data.p_pic1 = req.files.p_pic1[0].filename
+    }
+    if (req.files.p_pic2) {
+      data.p_pic2 = req.files.p_pic2[0].filename
+    }
+    if (req.files.p_pic3) {
+      data.p_pic3 = req.files.p_pic3[0].filename
+    }
+    if (req.files.p_pic4) {
+      data.p_pic4 = req.files.p_pic4[0].filename
+    }
+    if (req.files.p_pic5) {
+      data.p_pic5 = req.files.p_pic5[0].filename
+    }
+
+    console.log('storage', upload.storage.filerename)
+    console.log('多檔', req.files)
+
+    const sql2 = 'UPDATE `product_list` SET ? WHERE p_id = ?'
+    // INSERT, UPDATE 最好用 try/catch 做錯誤處理
+    try {
+      const [result] = await db.query(sql2, [data, p_id])
+      output.success = !!(result.affectedRows && result.changedRows)
+      output.result = result
+    } catch (ex) {
+      output.error = ex
+    }
+    res.json(output)
+  }
+)
 // GET - 得到單筆資料(注意，有動態參數時要寫在GET區段最後面)
 router.get('/:id', async function (req, res) {
   // 轉為數字
@@ -265,6 +352,67 @@ router.get('/type/:type', async function (req, res) {
       products,
     },
   })
+})
+
+router.post('/login-jwt', async (req, res) => {
+  const output = {
+    success: false,
+    error: '',
+    code: 0,
+    data: {
+      id: 0,
+      account: '',
+      nickname: '',
+      token: '',
+    },
+  }
+
+  let { account, password } = req.body || {}
+  account = account.trim() // 去頭尾空白
+  password = password.trim() // 去頭尾空白
+  // 1. 先判斷有沒有資料
+  if (!account || !password) {
+    output.error = '欄位資料不足'
+    return res.json(output)
+  }
+
+  const sql = 'SELECT * FROM admins WHERE account =?'
+  const [rows] = await db.query(sql, [account])
+  // 2. 沒有這個帳號
+  if (!rows.length) {
+    output.error = '帳號或密碼錯誤'
+    output.code = 400
+    return res.json(output)
+  }
+  const row = rows[0]
+
+  // 3. 比對密碼
+
+  const result = await bcrypt.compare(password, row.password)
+
+  console.log('result', result)
+
+  if (result) {
+    // 帳密都對
+    const data = {
+      id: row.id,
+      account: row.account,
+    }
+    const token = jwt.sign(data, process.env.JWT_SECRET)
+    output.data = {
+      id: row.id,
+      account: row.account,
+      nickname: row.nickname,
+      token,
+    }
+    output.success = true
+  } else {
+    // 密碼是錯的
+    output.error = '帳號或密碼錯誤'
+    output.code = 450
+    console.log('output2', output)
+  }
+  res.json(output)
 })
 
 export default router
