@@ -92,8 +92,23 @@ router.get('/', async function (req, res) {
     },
   })
 })
-// 處理新增的資料項目
 
+// GET - 得到所有資料
+router.get('/sold', async function (req, res) {
+  const [rows] = await db.query(
+    `SELECT * FROM product_list ORDER BY p_sold DESC LIMIT 5`
+  )
+
+  const products = rows
+  // 標準回傳JSON
+  return res.json({
+    status: 'success',
+    data: {
+      products,
+    },
+  })
+})
+// 處理新增的資料項目
 router.post(
   '/api',
   upload.fields([
