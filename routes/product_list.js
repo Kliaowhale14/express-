@@ -92,7 +92,9 @@ router.get('/', async function (req, res) {
     },
   })
 })
+// 處理新增的資料項目
 
+<<<<<<< HEAD
 // GET - 得到所有資料
 router.get('/sold', async function (req, res) {
   const [rows] = await db.query(
@@ -109,6 +111,8 @@ router.get('/sold', async function (req, res) {
   })
 })
 // 處理新增的資料項目
+=======
+>>>>>>> yumi
 router.post(
   '/api',
   upload.fields([
