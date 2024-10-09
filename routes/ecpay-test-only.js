@@ -25,7 +25,7 @@ router.get('/', function (req, res, next) {
   const TradeDesc = 'AND咖啡線上付款'
   const ItemName = `AND咖啡訂單編號${orderlist_id}，商品總數量：${item_qty}，商品內容：${order_item}`
   const ReturnURL = 'https://www.ecpay.com.tw'
-  const OrderResultURL = 'http://localhost:3005/api/orderfinish' //成功頁面
+  const OrderResultURL = `http://localhost:3000/addcart/finish/${orderlist_id}` //成功頁面
   const ChoosePayment = 'ALL'
 
   ////////////////////////以下參數不用改////////////////////////

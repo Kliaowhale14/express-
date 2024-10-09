@@ -1,23 +1,27 @@
 import express from 'express'
+import db from '##/configs/mysql.js' // 引入資料庫配置
 const router = express.Router()
 
-/* POST finish order */
-router.post('/', (req, res) => {
-  const orderlist_id = req.body.MerchantTradeNo // 訂單編號
-  const totalAmount = req.body.TotalAmount // 總金額
-  const itemQty = req.body.ItemQty // 商品數量
-  const orderItem = req.body.ItemName // 商品內容
+/* GET finish order */
 
-  // 返回 JSON 格式的資料
-  res.json({
-    status: 'success',
-    data: {
-      orderlist_id,
-      totalAmount,
-      itemQty,
-      orderItem,
-    },
-  })
+router.get('/:id', async function (req, res) {
+  // 轉為數字
+  const id = Number(req.params.id)
+
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM orderlist WHERE orderlist_id = ?',
+      [id]
+    )
+    const orderlist = rows[0]
+
+    return res.json({ status: 'success', data: { orderlist } })
+  } catch (e) {
+    return res.json({
+      status: 'error',
+      message: '找不到資料',
+    })
+  }
 })
 
 export default router
