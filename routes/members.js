@@ -1,4 +1,3 @@
-/ 引入必要的模組
 import fs from 'fs'
 import path from 'path'
 
