@@ -3,10 +3,15 @@ import upload from './../utils/upload-imgs.js'
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 
+import upload from './../utils/upload-imgs.js'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+
 const router = express.Router()
 
 // 資料庫直接使用mysql和sql來查詢
 import db from '##/configs/mysql.js'
+//import uploadImgs from '##/utils/upload-imgs.js'
 //import uploadImgs from '##/utils/upload-imgs.js'
 
 // GET - 得到所有資料
@@ -92,8 +97,23 @@ router.get('/', async function (req, res) {
     },
   })
 })
-// 處理新增的資料項目
 
+// GET - 得到所有資料
+router.get('/sold', async function (req, res) {
+  const [rows] = await db.query(
+    `SELECT * FROM product_list ORDER BY p_sold DESC LIMIT 5`
+  )
+
+  const products = rows
+  // 標準回傳JSON
+  return res.json({
+    status: 'success',
+    data: {
+      products,
+    },
+  })
+})
+// 處理新增的資料項目
 router.post(
   '/api',
   upload.fields([
@@ -352,6 +372,67 @@ router.get('/type/:type', async function (req, res) {
       products,
     },
   })
+})
+
+router.post('/login-jwt', async (req, res) => {
+  const output = {
+    success: false,
+    error: '',
+    code: 0,
+    data: {
+      id: 0,
+      account: '',
+      nickname: '',
+      token: '',
+    },
+  }
+
+  let { account, password } = req.body || {}
+  account = account.trim() // 去頭尾空白
+  password = password.trim() // 去頭尾空白
+  // 1. 先判斷有沒有資料
+  if (!account || !password) {
+    output.error = '欄位資料不足'
+    return res.json(output)
+  }
+
+  const sql = 'SELECT * FROM admins WHERE account =?'
+  const [rows] = await db.query(sql, [account])
+  // 2. 沒有這個帳號
+  if (!rows.length) {
+    output.error = '帳號或密碼錯誤'
+    output.code = 400
+    return res.json(output)
+  }
+  const row = rows[0]
+
+  // 3. 比對密碼
+
+  const result = await bcrypt.compare(password, row.password)
+
+  console.log('result', result)
+
+  if (result) {
+    // 帳密都對
+    const data = {
+      id: row.id,
+      account: row.account,
+    }
+    const token = jwt.sign(data, process.env.JWT_SECRET)
+    output.data = {
+      id: row.id,
+      account: row.account,
+      nickname: row.nickname,
+      token,
+    }
+    output.success = true
+  } else {
+    // 密碼是錯的
+    output.error = '帳號或密碼錯誤'
+    output.code = 450
+    console.log('output2', output)
+  }
+  res.json(output)
 })
 
 router.post('/login-jwt', async (req, res) => {
