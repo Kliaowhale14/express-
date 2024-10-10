@@ -55,25 +55,94 @@ router.get('/', async function (req, res) {
   })
 })
 
-// // GET - 得到單筆資料(注意，有動態參數時要寫在GET區段最後面)
-// router.get('/:id', async function (req, res) {
-//   // 轉為數字
-//   const id = Number(req.params.id)
+// DELETE - 根據訂單 ID 刪除訂單
+router.delete('/:id', async function (req, res) {
+  const orderId = req.params.id;
 
-//   try {
-//     const [rows] = await db.query(
-//       'SELECT * FROM orderlist WHERE orderlist_id = ?',
-//       [id]
-//     )
-//     const orderlist = rows[0]
+  try {
+    // 刪除該訂單
+    const [result] = await db.query(`DELETE FROM orderlist WHERE orderlist_id = ?`, [orderId]);
 
-//     return res.json({ status: 'success', data: { orderlist } })
-//   } catch (e) {
-//     return res.json({
-//       status: 'error',
-//       message: '找不到資料',
-//     })
-//   }
-// })
+    if (result.affectedRows > 0) {
+      return res.json({ status: 'success', message: '訂單已成功刪除' });
+    } else {
+      return res.status(404).json({ status: 'error', message: '訂單不存在' });
+    }
+  } catch (error) {
+    console.error('刪除訂單錯誤:', error);
+    return res.status(500).json({ status: 'error', message: '伺服器錯誤' });
+  }
+});
+
+
+// 獲取特定訂單
+router.get('/:id/get', async function (req, res) {
+  // 轉為數字
+  const id = Number(req.params.id)
+
+  try {
+    const [rows] = await db.query(
+      'SELECT * FROM orderlist WHERE orderlist_id = ?',
+      [id]
+    )
+    const orderlist = rows[0]
+
+    return res.json({ status: 'success', data: { orderlist } })
+  } catch (e) {
+    return res.json({
+      status: 'error',
+      message: '找不到資料',
+    })
+  }
+})
+
+
+// PUT - 更新訂單
+router.put('/:id/up', async function (req, res) {
+  const orderlist_id = req.params.id;
+  const {
+    order_date,
+    member_id,
+    member_name,
+    pay_ornot,
+    pay_id,
+    send_id,
+    send_tax,
+    total_price,
+    order_status,
+    recipient_address,
+    order_detail_id,
+  } = req.body;
+
+  try {
+    const [result] = await db.query(
+      `UPDATE orderlist SET 
+      order_date = ?, 
+      member_id = ?, 
+      member_name = ?, 
+      pay_ornot = ?, 
+      pay_id = ?, 
+      send_id = ?, 
+      send_tax = ?, 
+      total_price = ?, 
+      order_status = ?, 
+      recipient_address = ?, 
+      order_detail_id = ? 
+      WHERE orderlist_id = ?`,
+      [order_date, member_id, member_name, pay_ornot, pay_id, send_id, send_tax, total_price, order_status, recipient_address, order_detail_id, orderlist_id]
+    );
+
+    if (result.affectedRows > 0) {
+      return res.json({ status: 'success', message: '訂單已成功更新' });
+    } else {
+      return res.status(404).json({ status: 'error', message: '訂單不存在' });
+    }
+  } catch (error) {
+    console.error('更新訂單錯誤:', error);
+    return res.status(500).json({ status: 'error', message: '伺服器錯誤' });
+  }
+});
+
+
 
 export default router
