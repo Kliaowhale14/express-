@@ -57,49 +57,60 @@ router.get('/', async function (req, res) {
 
 // DELETE - 根據訂單 ID 刪除訂單
 router.delete('/:id', async function (req, res) {
-  const orderId = req.params.id;
+  const orderId = req.params.id
 
   try {
     // 刪除該訂單
-    const [result] = await db.query(`DELETE FROM orderlist WHERE orderlist_id = ?`, [orderId]);
+    const [result] = await db.query(
+      `DELETE FROM orderlist WHERE orderlist_id = ?`,
+      [orderId]
+    )
 
     if (result.affectedRows > 0) {
-      return res.json({ status: 'success', message: '訂單已成功刪除' });
+      return res.json({ status: 'success', message: '訂單已成功刪除' })
     } else {
-      return res.status(404).json({ status: 'error', message: '訂單不存在' });
+      return res.status(404).json({ status: 'error', message: '訂單不存在' })
     }
   } catch (error) {
-    console.error('刪除訂單錯誤:', error);
-    return res.status(500).json({ status: 'error', message: '伺服器錯誤' });
+    console.error('刪除訂單錯誤:', error)
+    return res.status(500).json({ status: 'error', message: '伺服器錯誤' })
   }
-});
+})
 
-
-// 獲取特定訂單
+// 獲取指定訂單資料
 router.get('/:id/get', async function (req, res) {
-  // 轉為數字
-  const id = Number(req.params.id)
-
   try {
+    const { id } = req.params // 獲取路由中的訂單編號
+
+    // 使用提供的訂單編號查詢資料庫
     const [rows] = await db.query(
       'SELECT * FROM orderlist WHERE orderlist_id = ?',
       [id]
     )
+
+    // 確認是否有資料返回
+    if (rows.length === 0) {
+      return res.json({
+        status: 'error',
+        message: '找不到訂單資料',
+      })
+    }
+
     const orderlist = rows[0]
 
     return res.json({ status: 'success', data: { orderlist } })
   } catch (e) {
+    console.error(e) // 輸出錯誤日志
     return res.json({
       status: 'error',
-      message: '找不到資料',
+      message: '獲取訂單失敗',
     })
   }
 })
 
-
 // PUT - 更新訂單
 router.put('/:id/up', async function (req, res) {
-  const orderlist_id = req.params.id;
+  const orderlist_id = req.params.id
   const {
     order_date,
     member_id,
@@ -112,7 +123,7 @@ router.put('/:id/up', async function (req, res) {
     order_status,
     recipient_address,
     order_detail_id,
-  } = req.body;
+  } = req.body
 
   try {
     const [result] = await db.query(
@@ -129,20 +140,31 @@ router.put('/:id/up', async function (req, res) {
       recipient_address = ?, 
       order_detail_id = ? 
       WHERE orderlist_id = ?`,
-      [order_date, member_id, member_name, pay_ornot, pay_id, send_id, send_tax, total_price, order_status, recipient_address, order_detail_id, orderlist_id]
-    );
+      [
+        order_date,
+        member_id,
+        member_name,
+        pay_ornot,
+        pay_id,
+        send_id,
+        send_tax,
+        total_price,
+        order_status,
+        recipient_address,
+        order_detail_id,
+        orderlist_id,
+      ]
+    )
 
     if (result.affectedRows > 0) {
-      return res.json({ status: 'success', message: '訂單已成功更新' });
+      return res.json({ status: 'success', message: '訂單已成功更新' })
     } else {
-      return res.status(404).json({ status: 'error', message: '訂單不存在' });
+      return res.status(404).json({ status: 'error', message: '訂單不存在' })
     }
   } catch (error) {
-    console.error('更新訂單錯誤:', error);
-    return res.status(500).json({ status: 'error', message: '伺服器錯誤' });
+    console.error('更新訂單錯誤:', error)
+    return res.status(500).json({ status: 'error', message: '伺服器錯誤' })
   }
-});
-
-
+})
 
 export default router
