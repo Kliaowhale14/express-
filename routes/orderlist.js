@@ -38,7 +38,7 @@ router.get('/', async function (req, res) {
   // 處理如果沒找到資料
 
   // 進行分頁時，額外執行sql在此條件下總共多少筆資料
-  const [rows2] = await db.query(`SELECT COUNT(*) AS count FROM orderlist`)
+  const [rows2] = await db.query(`SELECT COUNT(*) AS count FROM orderlist `)
   const { count } = rows2[0]
   // 計算總頁數
   const pageCount = Math.ceil(count / perpage)
@@ -84,7 +84,7 @@ router.get('/:id/get', async function (req, res) {
 
     // 使用提供的訂單編號查詢資料庫
     const [rows] = await db.query(
-      'SELECT * FROM orderlist WHERE orderlist_id = ?',
+      'SELECT * FROM orderlist WHERE orderlist_id = ? ORDER BY orderlist_id DESC',
       [id]
     )
 
