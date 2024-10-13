@@ -80,37 +80,26 @@ router.delete('/:id', async function (req, res) {
 // 獲取指定訂單資料
 router.get('/:id/get', async function (req, res) {
   try {
-    const { id } = req.params // 獲取路由中的訂單編號
+    const orderlist_id = Number(req.params.id)
 
     // 使用提供的訂單編號查詢資料庫
     const [rows] = await db.query(
-      'SELECT * FROM orderlist WHERE orderlist_id = ? ORDER BY orderlist_id DESC',
-      [id]
+   `SELECT * FROM orderlist ORDER BY orderlist_id DESC LIMIT 1`
     )
-
-    // 確認是否有資料返回
-    if (rows.length === 0) {
-      return res.json({
-        status: 'error',
-        message: '找不到訂單資料',
-      })
-    }
-
     const orderlist = rows[0]
 
     return res.json({ status: 'success', data: { orderlist } })
   } catch (e) {
-    console.error(e) // 輸出錯誤日志
     return res.json({
       status: 'error',
-      message: '獲取訂單失敗',
+      message: '找不到資料',
     })
   }
 })
 
 // PUT - 更新訂單
 router.put('/:id/up', async function (req, res) {
-  const orderlist_id = req.params.id
+  const orderlist_id = req.params.id;
   const {
     order_date,
     member_id,
@@ -123,7 +112,12 @@ router.put('/:id/up', async function (req, res) {
     order_status,
     recipient_address,
     order_detail_id,
-  } = req.body
+  } = req.body;
+
+  // 驗證必需的欄位
+  if (!order_date) {
+    return res.status(400).json({ status: 'error', message: '缺少必要的欄位' });
+  }
 
   try {
     const [result] = await db.query(
@@ -154,17 +148,18 @@ router.put('/:id/up', async function (req, res) {
         order_detail_id,
         orderlist_id,
       ]
-    )
+    );
 
     if (result.affectedRows > 0) {
-      return res.json({ status: 'success', message: '訂單已成功更新' })
+      return res.json({ status: 'success', message: '訂單已成功更新' });
     } else {
-      return res.status(404).json({ status: 'error', message: '訂單不存在' })
+      return res.status(404).json({ status: 'error', message: '訂單不存在' });
     }
   } catch (error) {
-    console.error('更新訂單錯誤:', error)
-    return res.status(500).json({ status: 'error', message: '伺服器錯誤' })
+    console.error('更新訂單錯誤:', error.message); // 更詳細的錯誤訊息
+    return res.status(500).json({ status: 'error', message: '伺服器錯誤' });
   }
-})
+});
+
 
 export default router
