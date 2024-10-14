@@ -84,7 +84,29 @@ router.get('/:id/get', async function (req, res) {
 
     // 使用提供的訂單編號查詢資料庫
     const [rows] = await db.query(
-   `SELECT * FROM orderlist ORDER BY orderlist_id DESC LIMIT 1`
+'SELECT * FROM orderlist WHERE orderlist_id = ?',
+   [orderlist_id]
+    )
+    const orderlist = rows[0]
+
+    return res.json({ status: 'success', data: { orderlist } })
+  } catch (e) {
+    return res.json({
+      status: 'error',
+      message: '找不到資料',
+    })
+  }
+})
+
+// 獲取指定訂單資料2
+router.get('/get', async function (req, res) {
+  try {
+    const orderlist_id = Number(req.params.id)
+
+    // 使用提供的訂單編號查詢資料庫
+    const [rows] = await db.query(
+      'SELECT * FROM orderlist ORDER BY orderlist_id DESC LIMIT 1'
+
     )
     const orderlist = rows[0]
 
